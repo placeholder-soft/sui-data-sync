@@ -20,3 +20,21 @@ export const EnvSUINodeRPCSchema = z.preprocess((val, ctx) => {
 }, z.string());
 
 export const SUI_ENV = z.enum(['devnet', 'testnet', 'mainnet']);
+
+
+export const BooleanSchema = z.preprocess((val, ctx) => {
+  if (typeof val === 'boolean') {
+    return val;
+  }
+  if (typeof val === 'string') {
+    return val === 'true';
+  }
+  if (typeof val === 'number') {
+    return val === 1;
+  }
+  ctx.addIssue({
+    message: `val is not a boolean: ${val}`,
+    code: 'custom',
+  });
+  return z.NEVER;
+}, z.boolean());

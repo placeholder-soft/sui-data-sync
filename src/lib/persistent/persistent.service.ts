@@ -1,4 +1,4 @@
-import { OnModuleDestroy } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import {
   createDateTypeParser,
   createIntervalTypeParser,
@@ -20,7 +20,7 @@ import {
 import { PersistentService } from './persistent.interface';
 
 function getNodeDatabaseURL() {
-  const NODE_DATABASE_URL = process.env.NODE_DATABASE_URL;
+  const NODE_DATABASE_URL = process.env['NODE_DATABASE_URL'];
   if (NODE_DATABASE_URL == null || NODE_DATABASE_URL.length === 0) {
     return null
   }
@@ -32,6 +32,7 @@ export class DefaultPersistentService
   implements OnModuleDestroy
 {
   private _pgPool: DatabasePool | null = null;
+  private readonly logger = new Logger(DefaultPersistentService.name);
 
   get pgPool(): DatabasePool {
     if (this._pgPool === null) {
@@ -45,6 +46,7 @@ export class DefaultPersistentService
     if (NODE_DATABASE_URL == null) {
       throw new Error('NODE_DATABASE_URL is not set');
     }
+    this.logger.verbose(`connecting to ${NODE_DATABASE_URL}`);
     const pool = await createPool(
       NODE_DATABASE_URL,
       {
