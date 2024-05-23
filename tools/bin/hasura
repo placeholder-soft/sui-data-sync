@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+BUILD_DIST_DIR=$DIR/../../../../dist/packages/dev/database
+DOCKER_COMPOSE_FILE_PATH=$BUILD_DIST_DIR/docker-compose.yaml
+
+read_docker_compose() {
+  yq e "$@" "$DOCKER_COMPOSE_FILE_PATH"
+}
+
+CLI_PATH=cli-hasura-$($DIR/osarch)-v${HASURA_VERSION}
+
+if [ ! -e "${DIR}/${CLI_PATH}" ]; then
+  rm -f ${DIR}/cli-hasura-*
+  $DIR/download https://github.com/hasura/graphql-engine/releases/download/v${HASURA_VERSION}/cli-hasura-$($DIR/osarch) ${DIR}/${CLI_PATH}
+  chmod +x ${DIR}/${CLI_PATH}
+fi
+
+
+HASURA_PORT=${HASURA_GRAPHQL_SERVER_PORT:-'8080'}
+HASURA_SECRET=${HASURA_GRAPHQL_ADMIN_SECRET:-'mysecretkey'}
+HASURA_ENDPOINT=${HASURA_GRAPHQL_ENDPOINT:-"http://localhost:$HASURA_PORT"}
+
+grey() { echo -e "\033[1;30m$1\033[0m"; }
+
+grey "    run hasrua with endpoint: $HASURA_ENDPOINT, admin secret: $HASURA_SECRET"
+
+pushd ${DIR}/../schema >/dev/null 2>&1 || exit 1
+#echo "version: 3
+#endpoint: $HASURA_ENDPOINT
+#admin_secret: $HASURA_SECRET
+#metadata_directory: metadata
+#" > config.yaml
+
+# https://github.com/hasura/graphql-engine/issues/4953
+unset NODE_OPTIONS
+${DIR}/${CLI_PATH} --skip-update-check --endpoint $HASURA_ENDPOINT --admin-secret $HASURA_SECRET $@
+popd >/dev/null 2>&1 || exit 1

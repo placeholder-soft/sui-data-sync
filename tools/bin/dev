@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+cd $DIR/../..
+
+green() {
+  echo -e "\033[1;32m$1\033[0m"
+}
+
+main() {
+  local CMD="${1:-start}"
+  case "${CMD}" in
+  start)
+    dev-network up
+    dev-database reset
+
+    green "dev environment started, press ctrl-c to exit"
+    trap 'dev down' SIGINT EXIT TERM
+
+    while true; do
+      sleep 5
+    done
+
+    ;;
+  down)
+    dev-database down
+    dev-network down
+    ;;
+  *)
+    echo "unknown command: ${CMD}"
+    ;;
+  esac
+}
+
+main $@
