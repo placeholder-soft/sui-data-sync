@@ -1,5 +1,4 @@
 import { OnModuleDestroy } from '@nestjs/common';
-import { typedEnv } from '@placeholdersoft/typed-env';
 import {
   createDateTypeParser,
   createIntervalTypeParser,
@@ -20,6 +19,14 @@ import {
 } from './parsers';
 import { PersistentService } from './persistent.interface';
 
+function getNodeDatabaseURL() {
+  const NODE_DATABASE_URL = process.env.NODE_DATABASE_URL;
+  if (NODE_DATABASE_URL == null || NODE_DATABASE_URL.length === 0) {
+    return null
+  }
+  return NODE_DATABASE_URL;
+}
+
 export class DefaultPersistentService
   extends PersistentService
   implements OnModuleDestroy
@@ -34,8 +41,12 @@ export class DefaultPersistentService
   }
 
   async connectPool() {
+    const NODE_DATABASE_URL = getNodeDatabaseURL();
+    if (NODE_DATABASE_URL == null) {
+      throw new Error('NODE_DATABASE_URL is not set');
+    }
     const pool = await createPool(
-      typedEnv('NODE_DATABASE_URL').required().toString(),
+      NODE_DATABASE_URL,
       {
         typeParsers: [
           // - customized type parsers
@@ -71,7 +82,7 @@ const PersistentServiceProvider = {
   provide: PersistentService,
   useFactory: async () => {
     const service = new DefaultPersistentService();
-    const url = typedEnv('NODE_DATABASE_URL').toString();
+    const url = getNodeDatabaseURL();
     if (url != null && url.length > 0) {
       await service.connectPool();
     } else {

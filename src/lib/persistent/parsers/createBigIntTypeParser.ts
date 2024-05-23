@@ -1,4 +1,4 @@
-import { TypeParser } from 'slonik';
+import { DriverTypeParser } from 'slonik';
 
 const bigintParser = (value: string) => {
   return BigInt(value);
@@ -6,28 +6,28 @@ const bigintParser = (value: string) => {
 
 // SELECT oid, typarray, typname FROM pg_type
 
-export const createInt8TypeParser = (): TypeParser => {
+export const createInt8TypeParser = (): DriverTypeParser => {
   return {
     name: 'int8',
     parse: bigintParser,
   };
 };
 
-export const createFloat4TypeParser = (): TypeParser => {
+export const createFloat4TypeParser = (): DriverTypeParser => {
   return {
     name: 'float4',
     parse: bigintParser,
   };
 };
 
-export const createFloat8TypeParser = (): TypeParser => {
+export const createFloat8TypeParser = (): DriverTypeParser => {
   return {
     name: 'float8',
     parse: bigintParser,
   };
 };
 
-export const createIntegerTypeParser = (): TypeParser => {
+export const createIntegerTypeParser = (): DriverTypeParser => {
   return {
     name: 'int4',
     parse: bigintParser,

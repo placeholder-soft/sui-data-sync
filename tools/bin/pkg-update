@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ncu -u -x prettier
+ncu -u -x prettier,eslint,eslint-config-prettier,@typescript-eslint/eslint-plugin,@typescript-eslint/parser
