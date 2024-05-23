@@ -1,0 +1,22 @@
+#!/bin/bash
+
+green() { echo -e "\033[32m$1\033[0m"; }
+
+use() {
+    local ENV=$1
+    # available env: devnet, testnet, mainnet, error if pass otherwise
+    if [ "$ENV" == "devnet" ]; then
+        green "use: devnet"
+    elif [ "$ENV" == "testnet" ]; then
+        green "use: testnet"
+    elif [ "$ENV" == "mainnet" ]; then
+        green "use: mainnet"
+    else
+        echo "error, please use devnet, testnet or mainnet"
+        exit 1;
+    fi
+
+    echo $ENV | pipe_env_var SUI_ENV
+}
+
+use $1
