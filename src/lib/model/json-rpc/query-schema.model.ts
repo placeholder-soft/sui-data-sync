@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { EventFilter, makePaginationResponseSchema, PageCursorEvent } from './base.model';
+import { BufferSchema } from '../base.model';
+import {
+  EventFilter,
+  makePaginationResponseSchema,
+  PageCursorEvent,
+} from './base.model';
 
 export const SUIMethod = z.enum([
   'suix_queryEvents',
@@ -12,9 +17,9 @@ const PageEvent = z.object({
     txDigest: z.string(),
     eventSeq: z.string(),
   }),
-  packageId: z.string(),
+  packageId: BufferSchema,
   transactionModule: z.string(),
-  sender: z.string(),
+  sender: BufferSchema,
   type: z.string(),
   parsedJson: z.any(),
   bcs: z.string(),

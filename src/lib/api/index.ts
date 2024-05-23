@@ -5,6 +5,7 @@ import {
   SUIQueryResponse,
   SUIQuerySchema,
 } from '../model/json-rpc';
+import { parseJSON, stringifyJSON } from '../utils/json';
 
 class QueryInconsistencyError extends Error {
   constructor(message: string) {
@@ -47,18 +48,14 @@ export async function sui_query<T extends SUIQuerySchema>(
   return validator.response;
 }
 
-// sui_query('suix_queryEvents', [
-//   {
-//     MoveEventType:
-//       '0xceba50ec29ada96392373f340fe4eeffab45140ac66acc9459770e5a3c58abf8::simple_gift_box::GiftBoxMinted',
-//   },
-//   {
-//     txDigest: 'DHs2b8Cipw2iT9G5cCh1vY1NxevyqerELYnAFo3Jn1dA',
-//     eventSeq: '2',
-//   },
-//   1,
-//   true,
-// ]).then(a => {
-//   console.log(a);
-// }); //?
-//
+sui_query('suix_queryEvents', [
+  {
+    MoveEventType:
+      '0xceba50ec29ada96392373f340fe4eeffab45140ac66acc9459770e5a3c58abf8::simple_gift_box::GiftBoxMinted',
+  },
+  null,
+  5,
+  true,
+]).then(a => {
+  console.log(parseJSON(stringifyJSON(a, 2)));
+}); //?
