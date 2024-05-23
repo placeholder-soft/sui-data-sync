@@ -6,7 +6,7 @@ export const SUIMethod = z.enum([
   'suix_queryTransactionBlocks',
 ]);
 
-/// - suix_queryEvents
+// region - suix_queryEvents
 const PageEvent = z.object({
   id: z.object({
     txDigest: z.string(),
@@ -30,8 +30,9 @@ export const SUIQuerySchemaEvents = z.object({
   ]),
   response: makePaginationResponseSchema(PageEvent),
 });
+// endregion
 
-/// - suix_queryTransactionBlocks
+// region - suix_queryTransactionBlocks
 export const SUIQuerySchemaTransactionBlocks = z.object({
   method: z.literal(SUIMethod.enum.suix_queryTransactionBlocks),
   request: z.tuple([
@@ -39,8 +40,12 @@ export const SUIQuerySchemaTransactionBlocks = z.object({
   ]),
   response: makePaginationResponseSchema(z.object({})),
 });
+// endregion
+
+// region - SUIQuerySchema
 export const SUIQuerySchema = z.discriminatedUnion('method', [
   SUIQuerySchemaEvents,
   SUIQuerySchemaTransactionBlocks,
 ]);
 export type SUIQuerySchema = z.infer<typeof SUIQuerySchema>;
+// endregion
