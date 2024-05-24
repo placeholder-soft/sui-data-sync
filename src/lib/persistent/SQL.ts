@@ -1,27 +1,37 @@
-import { createSqlTag, type SerializableValue } from 'slonik';
+import {
+  BinarySqlToken,
+  createSqlTag,
+  JsonBinarySqlToken,
+  SerializableValue,
+  sql,
+  SqlTag,
+} from 'slonik';
 import z from 'zod';
 import { BufferSchema } from '../model/base.model';
 
-export const SQL = {
-  ...createSqlTag({
-    typeAliases: {
-      id: z.object({
-        id: z.number(),
-      }),
-      void: z.object({}).strict(),
-      any: z.any(),
-    },
-  }),
+type SqlTagType = ReturnType<typeof createSqlTag>;
+
+const SqlTag: SqlTagType = createSqlTag({
+  typeAliases: {
+    id: z.object({
+      id: z.number(),
+    }),
+    void: z.object({}).strict(),
+    any: z.any(),
+  },
+});
+
+const SqlHelper = {
   bigint: (bigInt: bigint) => bigInt.toString(10),
   number: (num: number) => num,
   string: (str: string) => str,
   boolean: (bool: boolean) => bool,
   bool: (bool: boolean) => bool,
-  buffer: (buffer: string | Buffer) => {
+  buffer: (buffer: string | Buffer): BinarySqlToken => {
     if (typeof buffer === 'string') {
-      return SQL.binary(BufferSchema.parse(buffer));
+      return sql.binary(BufferSchema.parse(buffer));
     }
-    return SQL.binary(buffer);
+    return sql.binary(buffer);
   },
   get nullish() {
     return {
@@ -31,17 +41,21 @@ export const SQL = {
         }
         return num;
       },
-      date: (date: Date | null | undefined) => {
+      date: (
+        date: Date | null | undefined,
+      ): ReturnType<SqlTag['date']> | null => {
         if (date == null) {
           return null;
         }
-        return SQL.date(date);
+        return sql.date(date);
       },
-      timestamp: (date: Date | null | undefined) => {
+      timestamp: (
+        date: Date | null | undefined,
+      ): ReturnType<SqlTag['timestamp']> | null => {
         if (date == null) {
           return null;
         }
-        return SQL.timestamp(date);
+        return sql.timestamp(date);
       },
       bigint: (bigInt: bigint | null | undefined) => {
         if (bigInt == null) {
@@ -63,22 +77,31 @@ export const SQL = {
       },
       binary: SQL_to_buffer,
       buffer: SQL_to_buffer,
-      jsonb: (json: SerializableValue | null | undefined) => {
+      jsonb: (
+        json: SerializableValue | null | undefined,
+      ): null | JsonBinarySqlToken => {
         if (json == null) {
           return null;
         }
-        return SQL.jsonb(json);
+        return sql.jsonb(json);
       },
     };
   },
 };
 
-function SQL_to_buffer(buffer: string | Buffer | null | undefined) {
+export const SQL: SqlTagType & typeof SqlHelper = {
+  ...SqlTag,
+  ...SqlHelper,
+};
+
+function SQL_to_buffer(
+  buffer: string | Buffer | null | undefined,
+): BinarySqlToken | null {
   if (buffer == null) {
     return null;
   }
   if (typeof buffer === 'string') {
-    return SQL.binary(BufferSchema.parse(buffer));
+    return sql.binary(BufferSchema.parse(buffer));
   }
-  return SQL.binary(buffer);
+  return sql.binary(buffer);
 }

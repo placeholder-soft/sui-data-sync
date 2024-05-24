@@ -5,7 +5,6 @@
     "declaration": false,
     "moduleResolution": "node",
     "strict": true,
-    "noEmit": true,
     "noImplicitReturns": true,
     "noUnusedLocals": false,
     "noUncheckedIndexedAccess": true,
