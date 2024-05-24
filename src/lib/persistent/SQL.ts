@@ -16,6 +16,7 @@ export const SQL = {
   number: (num: number) => num,
   string: (str: string) => str,
   boolean: (bool: boolean) => bool,
+  bool: (bool: boolean) => bool,
   buffer: (buffer: string | Buffer) => {
     if (typeof buffer === 'string') {
       return SQL.binary(BufferSchema.parse(buffer));

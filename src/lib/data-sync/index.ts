@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
+import { DataSyncService, EventSyncSchema } from './data-sync.interface';
 import { DataSyncModule } from './data-sync.module';
-import { DataSyncRepository, EventSyncSchema } from './data-sync.repository';
 
 export * from './data-sync.interface';
 export * from './data-sync.module';
@@ -20,11 +20,14 @@ async function main() {
   const app = await NestFactory.createMicroservice(DataSyncModule, {
     logger: ['log', 'verbose', 'error', 'warn', 'debug', 'fatal'],
   });
-  const repo = app.get(DataSyncRepository);
+  const syncService = app.get(DataSyncService);
 
-  repo.preCheckEventsAbi(schema).then(a => {
-    console.log(a); //?
-  });
+  syncService.setSchemas([schema]);
+  syncService.addSyncMoveEventType(
+    `0xceba50ec29ada96392373f340fe4eeffab45140ac66acc9459770e5a3c58abf8::simple_gift_box::GiftBoxMinted`,
+  );
+
+  syncService.startSync();
 }
 
 main().catch(console.error);

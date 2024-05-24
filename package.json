@@ -18,6 +18,8 @@
     "slonik": "^45.4.1",
     "slonik-interceptor-query-logging": "^45.4.1",
     "slonik-sql-tag-raw": "^45.4.1",
+    "p-queue": "^6.6.2",
+    "p-retry": "^4.6.2",
     "tslib": "^2.6.2",
     "zod": "^3.23.8"
   },

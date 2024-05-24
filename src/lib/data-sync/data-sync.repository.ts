@@ -1,21 +1,17 @@
 import { Inject, Logger } from '@nestjs/common';
 import assert from 'assert';
-import { DatabaseTransactionConnection, SqlToken } from 'slonik';
+import {
+  BinarySqlToken,
+  DatabaseTransactionConnection,
+  JsonBinarySqlToken,
+} from 'slonik';
 import { raw } from 'slonik-sql-tag-raw';
 import { z } from 'zod';
 import { env } from '../env';
 import { PageEvent } from '../model/json-rpc';
 import { SQL } from '../persistent/SQL';
 import { PersistentService } from '../persistent/persistent.interface';
-
-export type EventSyncSchema = {
-  tableSchema: string;
-  transactionModule: string;
-  events: {
-    eventName: string;
-    fields: { [name: string]: 'string' | 'buffer' | 'number' | 'bool' };
-  }[];
-};
+import { EventSyncSchema } from './data-sync.interface';
 
 export class DataSyncRepository {
   private readonly logger = new Logger(DataSyncRepository.name, {
@@ -112,8 +108,9 @@ export class DataSyncRepository {
             "transactionModule" text      NOT NULL,
             "sender"            bytea     NOT NULL,
             "bcs"               text      NOT NULL,
-            "timestampMs"       timestamp NOT NULL,
-            "parsedJson"        jsonb NOT NULL,
+            "type"              text      NOT NULL,
+            "timestampMs"       BIGINT    NOT NULL,
+            "parsedJson"        jsonb     NOT NULL,
 ${fieldsSql}
             PRIMARY KEY ("txDigest", "eventSeq")
         );
@@ -228,7 +225,13 @@ ${fieldsSql}
       SQL.identifier(['timestampMs']),
       SQL.identifier(['parsedJson']),
     ];
-    const values: (SqlToken | string)[] = [
+    const values: (
+      | string
+      | number
+      | boolean
+      | BinarySqlToken
+      | JsonBinarySqlToken
+    )[] = [
       SQL.string(event.id.txDigest),
       SQL.string(event.id.eventSeq),
       SQL.string(eventTypeName),
@@ -243,7 +246,9 @@ ${fieldsSql}
 
     for (const [name, type] of Object.entries(eventAbi.fields)) {
       fields.push(SQL.identifier([name]));
-      values.push(SQL.jsonb(event.parsedJson[name]));
+      const value = event.parsedJson[name] as any;
+      // @ts-ignore
+      values.push(SQL[type](value));
     }
 
     const keyFragments = SQL.join(fields, SQL.fragment`, `);
@@ -257,5 +262,26 @@ ${fieldsSql}
         values (${valueFragments})
         on conflict do nothing;
       `);
+  }
+
+  async getLatestEventDigest(type: string, tableSchema: string) {
+    const types = type.split('::');
+    assert(types.length === 3, `invalid event type: ${type}`);
+    const [packageId, transactionModule, event] = types;
+    const tableName = `${transactionModule}_evt_${event}`;
+    const digest = await this.persistentService.pgPool.maybeOne(SQL.type(
+      z.object({ txDigest: z.string(), eventSeq: z.string() }),
+    ) // language=sql format=false
+    `
+        SELECT "txDigest", "eventSeq"
+        FROM ${SQL.identifier([tableSchema, tableName])}
+        WHERE "packageId" = ${SQL.string(packageId!)}
+          and "transactionModule" = ${SQL.string(transactionModule!)}
+          and "eventName" = ${SQL.string(event!)}
+        ORDER BY "timestampMs" DESC
+        LIMIT 1;
+    `);
+
+    return digest;
   }
 }

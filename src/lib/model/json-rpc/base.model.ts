@@ -9,7 +9,7 @@ export function makePaginationResponseSchema<T>(data: z.ZodType<T>) {
         txDigest: z.string(),
         eventSeq: z.string(),
       })
-      .nullish(),
+      .nullable(),
   });
 }
 
@@ -74,3 +74,4 @@ export const PageCursorEvent = z.object({
   txDigest: z.string(),
   eventSeq: z.string(),
 });
+export type PageCursorEvent = z.infer<typeof PageCursorEvent>;

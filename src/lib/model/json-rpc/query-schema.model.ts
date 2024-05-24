@@ -45,7 +45,7 @@ export const SUIQuerySchemaTransactionBlocks = z.object({
   request: z.tuple([
     z.string(), //query
   ]),
-  response: makePaginationResponseSchema(z.object({})),
+  response: makePaginationResponseSchema(z.object({ abc: z.string() })),
 });
 // endregion
 
@@ -55,4 +55,6 @@ export const SUIQuerySchema = z.discriminatedUnion('method', [
   SUIQuerySchemaTransactionBlocks,
 ]);
 export type SUIQuerySchema = z.infer<typeof SUIQuerySchema>;
+
+export type MethodTypes = SUIQuerySchema['method'];
 // endregion
