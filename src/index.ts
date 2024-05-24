@@ -28,7 +28,6 @@ async function main() {
   syncService.addSyncMoveEventType(
     `0xceba50ec29ada96392373f340fe4eeffab45140ac66acc9459770e5a3c58abf8::simple_gift_box::GiftBoxMinted`,
   );
-
   syncService.startSync();
 }
 
