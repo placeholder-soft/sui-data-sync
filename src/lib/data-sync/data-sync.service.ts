@@ -151,6 +151,7 @@ export class DefaultDataSyncService implements DataSyncService {
         this.logger.error(`invalid cursor: ${JSON.stringify(response)}`);
         break;
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cursor = response.nextCursor as any;
       // this.logger.verbose(`next cursor: ${JSON.stringify(cursor)}`);
 

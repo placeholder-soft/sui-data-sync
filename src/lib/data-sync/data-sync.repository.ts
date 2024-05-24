@@ -93,6 +93,7 @@ export class DataSyncRepository {
     const fieldsSql = Object.entries(fields)
       .map(
         ([name, type]) =>
+          // eslint-disable-next-line no-useless-escape
           `            \"${name}\" ${typeMapper[type]} NOT NULL,`,
       )
       .join('\n');
@@ -247,6 +248,7 @@ ${fieldsSql}
     for (const [name, type] of Object.entries(eventAbi.fields)) {
       fields.push(SQL.identifier([name]));
       const value = event.parsedJson[name] as any;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       values.push(SQL[type](value));
     }

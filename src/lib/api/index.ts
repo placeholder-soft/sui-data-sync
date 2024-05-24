@@ -65,3 +65,4 @@ export async function sui_query<T extends MethodTypes>(
 // ]).then(a => {
 //   console.log(parseJSON(stringifyJSON(a, 2)));
 // }); //?
+

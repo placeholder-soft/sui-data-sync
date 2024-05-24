@@ -24,5 +24,3 @@ export const env = memoizee(() => {
     SUI_NODE_RPC_URL,
   };
 });
-
-env().SUI_NODE_RPC_URL; //?

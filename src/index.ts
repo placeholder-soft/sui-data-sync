@@ -5,8 +5,6 @@ import {
   EventSyncSchema,
 } from './lib/data-sync';
 
-export * from './lib/sui-data-sync';
-
 const schema: EventSyncSchema = {
   tableSchema: 'gifted',
   transactionModule: 'simple_gift_box',
