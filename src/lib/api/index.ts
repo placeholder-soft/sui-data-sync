@@ -51,6 +51,7 @@ export async function sui_query<T extends MethodTypes>(
     response: typedData.result,
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return validator.response as any;
 }
 

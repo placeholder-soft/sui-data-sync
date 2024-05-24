@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Inject, Logger } from '@nestjs/common';
 import assert from 'assert';
 import {
@@ -212,6 +213,7 @@ ${fieldsSql}
     if (eventAbis.length > 1) {
       throw new Error(`duplicate abi for ${event.type}`);
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const eventAbi = eventAbis[0]!;
 
     const fields = [
@@ -247,6 +249,7 @@ ${fieldsSql}
 
     for (const [name, type] of Object.entries(eventAbi.fields)) {
       fields.push(SQL.identifier([name]));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const value = event.parsedJson[name] as any;
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
