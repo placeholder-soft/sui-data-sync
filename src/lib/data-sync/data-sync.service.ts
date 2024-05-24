@@ -34,8 +34,17 @@ export class DefaultDataSyncService implements DataSyncService {
   }
 
   async loopSync() {
+    let pass = true;
     for (const schema of this.schemas) {
-      await this.dataSyncRepository.preCheckEventsAbi(schema);
+      const valid = await this.dataSyncRepository.preCheckEventsAbi(schema);
+      if (!valid) {
+        pass = false;
+        break;
+      }
+    }
+
+    if (!pass) {
+      throw new Error(`there are invalid schemas, please check the logs`);
     }
     this.syncing = true;
     while (this.syncing) {
