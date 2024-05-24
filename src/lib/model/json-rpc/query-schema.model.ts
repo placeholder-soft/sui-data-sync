@@ -12,7 +12,7 @@ export const SUIMethod = z.enum([
 ]);
 
 // region - suix_queryEvents
-const PageEvent = z.object({
+export const PageEvent = z.object({
   id: z.object({
     txDigest: z.string(),
     eventSeq: z.string(),
@@ -25,6 +25,8 @@ const PageEvent = z.object({
   bcs: z.string(),
   timestampMs: z.string(),
 });
+export type PageEvent = z.infer<typeof PageEvent>;
+
 export const SUIQuerySchemaEvents = z.object({
   method: z.literal(SUIMethod.enum.suix_queryEvents),
   request: z.tuple([

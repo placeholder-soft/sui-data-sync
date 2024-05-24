@@ -1,9 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { DataSyncModule } from './data-sync.module';
-import { DataSyncRepository } from './data-sync.repository';
+import { DataSyncRepository, EventSyncSchema } from './data-sync.repository';
 
 export * from './data-sync.interface';
 export * from './data-sync.module';
+
+const schema: EventSyncSchema = {
+  tableSchema: 'gifted',
+  transactionModule: 'simple_gift_box',
+  events: [
+    {
+      eventName: 'GiftBoxMinted',
+      fields: { object_id: 'buffer', name: 'string', creator: 'buffer' },
+    },
+  ],
+};
 
 async function main() {
   const app = await NestFactory.createMicroservice(DataSyncModule, {
@@ -11,20 +22,9 @@ async function main() {
   });
   const repo = app.get(DataSyncRepository);
 
-  repo
-    .preCheckEventsAbi({
-      tableSchema: 'gifted',
-      transactionModule: 'simple_gift_box',
-      events: [
-        {
-          eventName: 'GiftBoxMinted3',
-          fields: { object_id: 'buffer', name: 'string', creator: 'buffer' },
-        },
-      ],
-    })
-    .then(a => {
-      console.log(a); //?
-    });
+  repo.preCheckEventsAbi(schema).then(a => {
+    console.log(a); //?
+  });
 }
 
 main().catch(console.error);

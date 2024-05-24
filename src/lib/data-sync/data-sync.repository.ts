@@ -1,7 +1,10 @@
 import { Inject, Logger } from '@nestjs/common';
+import assert from 'assert';
+import { DatabaseTransactionConnection, SqlToken } from 'slonik';
 import { raw } from 'slonik-sql-tag-raw';
 import { z } from 'zod';
 import { env } from '../env';
+import { PageEvent } from '../model/json-rpc';
 import { SQL } from '../persistent/SQL';
 import { PersistentService } from '../persistent/persistent.interface';
 
@@ -92,7 +95,10 @@ export class DataSyncRepository {
     } as const;
 
     const fieldsSql = Object.entries(fields)
-      .map(([name, type]) => `            \"${name}\" ${typeMapper[type]} NOT NULL,`)
+      .map(
+        ([name, type]) =>
+          `            \"${name}\" ${typeMapper[type]} NOT NULL,`,
+      )
       .join('\n');
 
     // language=TEXT format=false
@@ -101,11 +107,13 @@ export class DataSyncRepository {
         (
             "txDigest"          text      NOT NULL,
             "eventSeq"          numeric   NOT NULL,
+            "eventName"         text      NOT NULL,
             "packageId"         bytea     NOT NULL,
             "transactionModule" text      NOT NULL,
             "sender"            bytea     NOT NULL,
             "bcs"               text      NOT NULL,
             "timestampMs"       timestamp NOT NULL,
+            "parsedJson"        jsonb NOT NULL,
 ${fieldsSql}
             PRIMARY KEY ("txDigest", "eventSeq")
         );
@@ -155,5 +163,99 @@ ${fieldsSql}
       `);
       throw e;
     }
+  }
+
+  async saveEvents(params: {
+    schemas: EventSyncSchema[];
+    events: PageEvent[];
+  }) {
+    const { schemas, events } = params;
+
+    for (const event of events) {
+      const schema = (() => {
+        const filters = schemas.filter(s => {
+          return s.transactionModule === event.transactionModule;
+        });
+        if (filters.length === 0) {
+          return null;
+        }
+        if (filters.length > 1) {
+          throw new Error(
+            `duplicate transactionModule: ${event.transactionModule}`,
+          );
+        }
+
+        return filters[0] ?? null;
+      })();
+      if (!schema) {
+        this.logger.warn(`missing schema for ${event.transactionModule}`);
+        continue;
+      }
+
+      await this.persistentService.pgPool.transaction(async conn => {
+        await this.saveEvent({ schema, event }, conn);
+      });
+    }
+  }
+  async saveEvent(
+    params: { schema: EventSyncSchema; event: PageEvent },
+    conn: DatabaseTransactionConnection,
+  ) {
+    const { schema, event } = params;
+    // event type: 0x1::simple_gift_box::GiftBoxMinted
+    const eventTypeName = event.type.split('::')[2];
+    assert(eventTypeName, `missing event type name: ${event.type}`);
+
+    const eventAbis = schema.events.filter(e => e.eventName === eventTypeName);
+    if (eventAbis.length === 0) {
+      this.logger.warn(`missing abi for ${event.type}`);
+      return;
+    }
+    if (eventAbis.length > 1) {
+      throw new Error(`duplicate abi for ${event.type}`);
+    }
+    const eventAbi = eventAbis[0]!;
+
+    const fields = [
+      SQL.identifier(['txDigest']),
+      SQL.identifier(['eventSeq']),
+      SQL.identifier(['eventName']),
+      SQL.identifier(['packageId']),
+      SQL.identifier(['transactionModule']),
+      SQL.identifier(['sender']),
+      SQL.identifier(['type']),
+      SQL.identifier(['bcs']),
+      SQL.identifier(['timestampMs']),
+      SQL.identifier(['parsedJson']),
+    ];
+    const values: (SqlToken | string)[] = [
+      SQL.string(event.id.txDigest),
+      SQL.string(event.id.eventSeq),
+      SQL.string(eventTypeName),
+      SQL.buffer(event.packageId),
+      SQL.string(event.transactionModule),
+      SQL.buffer(event.sender),
+      SQL.string(event.type),
+      SQL.string(event.bcs),
+      SQL.string(event.timestampMs),
+      SQL.jsonb(event.parsedJson),
+    ];
+
+    for (const [name, type] of Object.entries(eventAbi.fields)) {
+      fields.push(SQL.identifier([name]));
+      values.push(SQL.jsonb(event.parsedJson[name]));
+    }
+
+    const keyFragments = SQL.join(fields, SQL.fragment`, `);
+    const valueFragments = SQL.join(values, SQL.fragment`, `);
+
+    const tableName = `${schema.transactionModule}_evt_${eventTypeName}`;
+
+    await conn.query(SQL.typeAlias('void')`
+        insert into ${SQL.identifier([schema.tableSchema, tableName])}
+          (${keyFragments})
+        values (${valueFragments})
+        on conflict do nothing;
+      `);
   }
 }
